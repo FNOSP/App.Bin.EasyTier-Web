@@ -1,4 +1,4 @@
-# App.Bin.EasyTier-Web
+# EasyTier-Web飞牛套件
 - EasyTier是一个由 Rust 和 Tokio 驱动的简单、安全、去中心化的异地组网方案。
 - EasyTier-Web是为EasyTier提供web管理页面，让用户更直观地管理组网。
 ### 使用方法：
