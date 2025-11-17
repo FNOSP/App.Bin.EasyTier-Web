@@ -1,0 +1,18 @@
+{
+    "data-share":
+    {
+        "shares":
+        [
+            {
+                "name": "Easytier-Web",
+                "permission":
+                {
+                    "rw":
+                    [
+                        "Easytier-Web"
+                    ]
+                }
+            }
+        ]
+    }
+}

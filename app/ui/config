@@ -1,0 +1,11 @@
+{
+    ".url": {
+        "EasyTier-Web.Application": {
+            "title": "EasyTier-Web",
+            "icon": "images/icon_{0}.png",
+            "type": "url",
+            "protocol": "http",
+            "port": "11211",
+        }
+    }
+}

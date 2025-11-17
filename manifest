@@ -1,0 +1,13 @@
+appname               = EasyTier-Web
+version               = 2.4.5
+display_name          = EasyTier-Web
+desc                  = """<p><strong>EasyTier是一个由 Rust 和 Tokio 驱动的简单、安全、去中心化的异地组网方案。</strong></p><p><strong>EasyTier-Web是为EasyTier提供web管理页面，让用户更直观地管理组网。</strong></p><p><strong><br>使用方法：</strong></p><p>API主机填飞牛本机ip+11211端口，例如http://192.168.1.3:11211。初始用户名和密码都是admin，点击登陆后，找到左边侧边栏的设备列表，添加一个新的网络，剩下的操作和其他客户端一样，详情可以看easytier官网介绍。</p>"""
+arch                  = x86_64
+source                = thirdparty
+maintainer            = EasyTier
+maintainer_url      = https://easytier.cn/
+distributor           = qilinzhu
+distributor_url      = https://space.bilibili.com/351478349?spm_id_from=333.1007.0.0
+desktop_uidir         = ui
+os_min_version       = 0.9.27
+desktop_applaunchname = EasyTier-Web.Application

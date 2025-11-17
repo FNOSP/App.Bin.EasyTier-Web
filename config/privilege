@@ -1,0 +1,8 @@
+{
+    "defaults":
+    {
+        "run-as": "root"
+    },
+    "username": "EasyTier-Web",
+    "groupname": "EasyTier-Web"
+}
