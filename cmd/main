@@ -2,13 +2,105 @@
 
 LOG_FILE="${TRIM_PKGVAR}/info.log"
 PID_FILE="${TRIM_PKGVAR}/app.pid"
+LOG_CHECK_MARKER="${TRIM_PKGVAR}/.log_check_marker"
+LOG_MAX_SIZE=10485760  # 10MB = 10 * 1024 * 1024 bytes
+LOG_CHECK_INTERVAL=3  # 检查间隔(天)
+
+# 检查并清理日志文件大小（每3天检查一次）
+check_log_size() {
+    local should_check=false
+    
+    # 检查标记文件是否存在
+    if [ ! -f "${LOG_CHECK_MARKER}" ]; then
+        should_check=true
+    else
+        # 读取上次检查时间
+        local last_check=$(cat "${LOG_CHECK_MARKER}" 2>/dev/null | tr -d '[:space:]')
+        if [ -n "$last_check" ]; then
+            # 计算天数差
+            local current_time=$(date +%s)
+            local days_diff=$(( (current_time - last_check) / 86400 ))
+            if [ "$days_diff" -ge "$LOG_CHECK_INTERVAL" ]; then
+                should_check=true
+            fi
+        else
+            should_check=true
+        fi
+    fi
+    
+    if [ "$should_check" = true ]; then
+        if [ -f "${LOG_FILE}" ]; then
+            local file_size=$(stat -c%s "${LOG_FILE}" 2>/dev/null || stat -f%z "${LOG_FILE}" 2>/dev/null)
+            if [ "${file_size}" -gt "${LOG_MAX_SIZE}" ]; then
+                echo "$(date '+%Y-%m-%d %H:%M:%S') - Log file exceeded 10MB, clearing content" > "${LOG_FILE}"
+            fi
+        fi
+        # 更新检查时间标记
+        echo "$(date +%s)" > "${LOG_CHECK_MARKER}"
+    fi
+}
+
 
 # 主函数
-DATA_DIR="${TRIM_DATA_SHARE_PATHS%%:*}"
-# write the command to start your program here 
-CMD="DATA_DIR=${DATA_DIR} PORT=11211 ${TRIM_APPDEST}/server/easytier-web-embed -d ${TRIM_APPDEST}/server/data/et.db & sudo ${TRIM_APPDEST}/server/easytier-core -w udp://127.0.0.1:22020/admin"
+CONFIG_DIR="${TRIM_DATA_SHARE_PATHS%%:*}"
+
+# 检查配置文件并初始化
+check_and_init_config() {
+    local config_file="${CONFIG_DIR}/config.json"
+    
+    # 确保CONFIG_DIR目录存在
+    if [ ! -d "${CONFIG_DIR}" ]; then
+        log_msg "Creating config directory: ${CONFIG_DIR}"
+        mkdir -p "${CONFIG_DIR}"
+    fi
+    
+    # 检查config.json文件是否存在
+    if [ ! -f "${config_file}" ]; then
+        log_msg "Config file not found, creating default config: ${config_file}"
+        echo '{"uiport": "11211"}' > "${config_file}"
+        log_msg "Default config created with uiport: 11211"
+    else
+        log_msg "Config file found: ${config_file}"
+    fi
+}
+
+# 从config.json读取uiport
+get_uiport() {
+    local config_file="${CONFIG_DIR}/config.json"
+    
+    if [ ! -f "${config_file}" ]; then
+        log_msg "Config file not found, using default port: 11211"
+        echo "11211"
+        return
+    fi
+    
+    # 使用jq读取JSON，如果没有jq则使用简单的grep和sed
+    if command -v jq >/dev/null 2>&1; then
+        local port=$(jq -r '.uiport' "${config_file}" 2>/dev/null)
+        if [ -n "${port}" ] && [ "${port}" != "null" ]; then
+            echo "${port}"
+        else
+            echo "11211"
+        fi
+    else
+        # 简单的JSON解析
+        local port=$(grep -o '"uiport"[[:space:]]*:[[:space:]]*"[^"]*"' "${config_file}" | sed 's/.*"uiport"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' | head -1)
+        if [ -n "${port}" ]; then
+            echo "${port}"
+        else
+            echo "11211"
+        fi
+    fi
+}
+
+# write the command to start your program here
+# 将uiport值直接获取并设置，而不是在子shell中调用函数
+UI_PORT=$(get_uiport)
+CMD="${TRIM_APPDEST}/server/easytier-web-embed -a ${UI_PORT} -d ${TRIM_APPDEST}/server/data/et.db & sudo ${TRIM_APPDEST}/server/easytier-core -w udp://127.0.0.1:22020/admin"
 
 log_msg() {
+    # 先检查日志文件大小
+    check_log_size
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> ${LOG_FILE}
 }
 
@@ -56,6 +148,9 @@ start_process() {
         return 0
     fi
 
+    # 在启动前检查并初始化配置文件
+    check_and_init_config
+    
     log_msg "Starting process ..."
     # run cmd to start process
     bash -c "${CMD}" >> ${LOG_FILE} 2>&1 &
