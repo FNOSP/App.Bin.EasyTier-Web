@@ -6,6 +6,12 @@
             "type": "url",
             "protocol": "http",
             "port": "11211",
+            "control": {
+                "accessPerm": "editable",
+                "portPerm": "editable", 
+                "pathPerm": "editable"
+            }
         }
     }
 }
+
